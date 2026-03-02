@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ func getTestParcel() Parcel {
 		Address:   "test",
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	}
+}
 
 func setupTestDB(t *testing.T) *sql.DB {
 	db, err := sql.Open("sqlite", ":memory:")
@@ -72,7 +74,7 @@ func TestDeleteNonRegistered(t *testing.T) {
 
 	err = store.Delete(id)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "cannot delete parcel in status sent")
+	require.Contains(t, err.Error(), "cannot delete parcel")
 
 	_, err = store.Get(id)
 	require.NoError(t, err)
@@ -100,7 +102,7 @@ func TestSetAddress(t *testing.T) {
 
 	err = store.SetAddress(id, "another address")
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "cannot change address for parcel in status sent")
+	require.Contains(t, err.Error(), "cannot change address")
 
 	p, err = store.Get(id)
 	require.NoError(t, err)
@@ -132,9 +134,18 @@ func TestGetByClient(t *testing.T) {
 
 	client := 12345
 	parcels := []Parcel{
-		{Client: client, Status: ParcelStatusRegistered, Address: "addr1", CreatedAt: time.Now().Format(time.RFC3339)},
-		{Client: client, Status: ParcelStatusSent, Address: "addr2", CreatedAt: time.Now().Format(time.RFC3339)},
-		{Client: client, Status: ParcelStatusDelivered, Address: "addr3", CreatedAt: time.Now().Format(time.RFC3339)},
+		getTestParcel(),
+		getTestParcel(),
+		getTestParcel(),
+	}
+	for i := range parcels {
+		parcels[i].Client = client
+		parcels[i].Status = []string{
+			ParcelStatusRegistered,
+			ParcelStatusSent,
+			ParcelStatusDelivered,
+		}[i]
+		parcels[i].Address = fmt.Sprintf("addr%d", i+1)
 	}
 	parcelMap := make(map[int]Parcel)
 
@@ -152,9 +163,6 @@ func TestGetByClient(t *testing.T) {
 	for _, sp := range stored {
 		original, ok := parcelMap[sp.Number]
 		require.True(t, ok, "unexpected parcel number %d", sp.Number)
-		require.Equal(t, original.Client, sp.Client)
-		require.Equal(t, original.Status, sp.Status)
-		require.Equal(t, original.Address, sp.Address)
-		require.Equal(t, original.CreatedAt, sp.CreatedAt)
+		require.Equal(t, original, sp)
 	}
 }

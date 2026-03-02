@@ -70,25 +70,37 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 }
 
 func (s ParcelStore) SetAddress(number int, address string) error {
-	p, err := s.Get(number)
+	result, err := s.db.Exec(
+		"UPDATE parcel SET address = ? WHERE number = ? AND status = ?",
+		address, number, ParcelStatusRegistered,
+	)
 	if err != nil {
 		return err
 	}
-	if p.Status != ParcelStatusRegistered {
-		return fmt.Errorf("cannot change address for parcel in status %s", p.Status)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
 	}
-	_, err = s.db.Exec("UPDATE parcel SET address = ? WHERE number = ?", address, number)
-	return err
+	if rowsAffected == 0 {
+		return fmt.Errorf("cannot change address for parcel %d: not found or status is not registered", number)
+	}
+	return nil
 }
 
 func (s ParcelStore) Delete(number int) error {
-	p, err := s.Get(number)
+	result, err := s.db.Exec(
+		"DELETE FROM parcel WHERE number = ? AND status = ?",
+		number, ParcelStatusRegistered,
+	)
 	if err != nil {
 		return err
 	}
-	if p.Status != ParcelStatusRegistered {
-		return fmt.Errorf("cannot delete parcel in status %s", p.Status)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
 	}
-	_, err = s.db.Exec("DELETE FROM parcel WHERE number = ?", number)
-	return err
+	if rowsAffected == 0 {
+		return fmt.Errorf("cannot delete parcel %d: not found or status is not registered", number)
+	}
+	return nil
 }
