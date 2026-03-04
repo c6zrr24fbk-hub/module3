@@ -49,11 +49,10 @@ func TestAddGetDelete(t *testing.T) {
 
 	p, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, id, p.Number)
-	require.Equal(t, parcel.Client, p.Client)
-	require.Equal(t, parcel.Status, p.Status)
-	require.Equal(t, parcel.Address, p.Address)
-	require.Equal(t, parcel.CreatedAt, p.CreatedAt)
+
+	expected := parcel
+	expected.Number = id
+	require.Equal(t, expected, p)
 
 	err = store.Delete(id)
 	require.NoError(t, err)
@@ -76,8 +75,9 @@ func TestDeleteNonRegistered(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "cannot delete parcel")
 
-	_, err = store.Get(id)
+	p, err := store.Get(id)
 	require.NoError(t, err)
+	require.Equal(t, parcel.Status, p.Status) // статус не изменился
 }
 
 func TestSetAddress(t *testing.T) {
@@ -106,7 +106,7 @@ func TestSetAddress(t *testing.T) {
 
 	p, err = store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, newAddress, p.Address)
+	require.Equal(t, newAddress, p.Address) // адрес не изменился
 }
 
 func TestSetStatus(t *testing.T) {
@@ -124,7 +124,11 @@ func TestSetStatus(t *testing.T) {
 
 	p, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, newStatus, p.Status)
+
+	expected := parcel
+	expected.Number = id
+	expected.Status = newStatus
+	require.Equal(t, expected, p)
 }
 
 func TestGetByClient(t *testing.T) {
@@ -138,13 +142,10 @@ func TestGetByClient(t *testing.T) {
 		getTestParcel(),
 		getTestParcel(),
 	}
+	statuses := []string{ParcelStatusRegistered, ParcelStatusSent, ParcelStatusDelivered}
 	for i := range parcels {
 		parcels[i].Client = client
-		parcels[i].Status = []string{
-			ParcelStatusRegistered,
-			ParcelStatusSent,
-			ParcelStatusDelivered,
-		}[i]
+		parcels[i].Status = statuses[i]
 		parcels[i].Address = fmt.Sprintf("addr%d", i+1)
 	}
 	parcelMap := make(map[int]Parcel)

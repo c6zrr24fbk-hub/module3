@@ -5,14 +5,6 @@ import (
 	"fmt"
 )
 
-type Parcel struct {
-	Number    int
-	Client    int
-	Status    string
-	Address   string
-	CreatedAt string
-}
-
 type ParcelStore struct {
 	db *sql.DB
 }
@@ -61,7 +53,10 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 		}
 		parcels = append(parcels, p)
 	}
-	return parcels, rows.Err()
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return parcels, nil
 }
 
 func (s ParcelStore) SetStatus(number int, status string) error {
