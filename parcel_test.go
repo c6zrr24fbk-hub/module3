@@ -77,7 +77,7 @@ func TestDeleteNonRegistered(t *testing.T) {
 
 	p, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, parcel.Status, p.Status) // статус не изменился
+	require.Equal(t, parcel.Status, p.Status)
 }
 
 func TestSetAddress(t *testing.T) {
@@ -106,7 +106,7 @@ func TestSetAddress(t *testing.T) {
 
 	p, err = store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, newAddress, p.Address) // адрес не изменился
+	require.Equal(t, newAddress, p.Address)
 }
 
 func TestSetStatus(t *testing.T) {
